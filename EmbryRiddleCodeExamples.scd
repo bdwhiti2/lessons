@@ -11,8 +11,6 @@ s.options
 .memSize_(2 << 19)
 .sampleRate_(48000)
 .hardwareBufferSize_(512);
-
-b = Buffer.alloc(s, 666 * s.sampleRate); //for ~freeze
 )
 
 //STEP 2
@@ -28,13 +26,19 @@ p = ProxySpace.push(s.boot);
 
 	IFFT(chain) * amp;
 };
+
+~binScrambler.play;
 )
 
+~binScrambler.end;
+
 (
+b = Buffer.alloc(s, 666 * s.sampleRate);
+
 ~freeze = { |panRate=10, t_trig=0|
 	var sig = SoundIn.ar;
 	var rand = Rand(30, 60);
-	var writePos = Phasor.ar(0, 1, 0, BufFrames.kr(b[3]));
+	var writePos = Phasor.ar(0, 1, 0, BufFrames.kr(b));
 	var readPos = writePos * ~freezeLine1;
 	var shift = PitchShift.ar(sig, pitchRatio: LFNoise1.kr(LFNoise0.kr(0.33), 0.5, 0.5).abs, mul: 1.5);
 	var trig = Trig.kr(t_trig, LFNoise0.kr(0.1, 3).abs);
@@ -46,9 +50,9 @@ p = ProxySpace.push(s.boot);
 	chain1 = PV_MagFreeze(chain1, trig);
 	ifft1 = IFFT(chain1);
 
-	BufWr.ar(ifft1, b[3], writePos);
+	BufWr.ar(ifft1, b, writePos);
 
-	ifft2 = BufRd.ar(1, b[3], readPos);
+	ifft2 = BufRd.ar(1, b, readPos);
 	chain2 = FFT(LocalBuf(2048), ifft2);
 	chain2 = PV_MagFreeze(chain2, trig);
 	ifft2 = IFFT(chain2) * Line.kr(1, 1.5, rand);
@@ -60,8 +64,12 @@ p = ProxySpace.push(s.boot);
 	resynth;
 };
 
-~freezeLine1 = { DC.kr(0.25) };
+~freezeLine1 = { DC.kr(0.5) };
 )
+
+~freeze.play;
+
+~freeze.end;
 
 (
 ~chopper = { |freq=60, amp=1.5|
@@ -75,6 +83,9 @@ p = ProxySpace.push(s.boot);
 	chain;
 };
 )
+
+~chopper.play;
+~chopper.end;
 
 (
 ~distortion = { |hpf_freq=400, lpf_freq=3800, eq_freq=120, rq=0.7, db=8,	hpf_amp=5, lpf_amp=0.5, smoothing=1, amp=0.2, amt=0.9|
@@ -99,8 +110,12 @@ p = ProxySpace.push(s.boot);
 };
 )
 
+~distortion.play;
+~distortion.end;
+
+~creepyReverb.play; ~creepyReverb.vol_(0);
 (
-~creepyReverb = { |pan=0, preAmp=1.5, amp=0, initDelayTime=0.5, maxDelayTime=5, min=0.1, max=1|
+~creepyReverb = { |pan=0, preAmp=1.5, amp=1, initDelayTime=0.5, maxDelayTime=5, min=0.1, max=1|
 	var sig = SoundIn.ar;
 	var transform = BPF.ar(sig, 2000, 1/12);
 	var delay;
@@ -118,5 +133,11 @@ p = ProxySpace.push(s.boot);
 	Splay.ar(Mix([transform.dup, delay]) * amp, center: pan)
 };
 )
+
+~creepyReverb.vol_(1);
+
+~creepyReverb.end;
+
+~crossover.play;
 
 ~crossover = { |amp=0.5, smooth=0.99| CrossoverDistortion.ar(SoundIn.ar, smooth: smooth) * amp };
