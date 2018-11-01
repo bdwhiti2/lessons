@@ -4,6 +4,21 @@
 //NOTE: MAKE SURE YOU MONITOR USING HEADPHONES OR EARBUDS TO PREVENT FEEDBACK, ESPECIALLY IF USING
 //A LAPTOP'S INTERNAL MIC/SPEAKERS!!!!
 
+//STEP 1
+(
+Server.default = s = Server.local;
+s.options
+.memSize_(2 << 19)
+.sampleRate_(48000)
+.hardwareBufferSize_(512);
+
+b = Buffer.alloc(s, 666 * s.sampleRate); //for ~freeze
+)
+
+//STEP 2
+p = ProxySpace.push(s.boot);
+
+//HAVE FUN!
 (
 ~binScrambler = { |amp=1|
 	var sig = SoundIn.ar;
